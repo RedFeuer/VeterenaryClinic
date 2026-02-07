@@ -15,9 +15,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class AppViewModel(
-    private val observePatients: ObservePatientsUseCase,
-    private val addPatient: AddPatientUseCase,
-    private val deletePatient: DeletePatientUseCase
+    private val observePatientsUseCase: ObservePatientsUseCase,
+    private val addPatientUseCase: AddPatientUseCase,
+    private val deletePatientUseCase: DeletePatientUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<AppState.Content>(AppState.Content())
@@ -25,7 +25,7 @@ class AppViewModel(
 
     init {
         viewModelScope.launch {
-            observePatients()
+            observePatientsUseCase()
                 .onStart { _state.update { it.copy(isLoading = true, error = null) } }
                 .catch { e -> _state.update { it.copy(isLoading = false, error = e.message) } }
                 .collect { patients ->
@@ -49,12 +49,12 @@ class AppViewModel(
 
         viewModelScope.launch {
             // id лучше генерировать в Room через autoGenerate, тогда здесь id не нужен.
-            addPatient(Patient(id = 0L, name = n, species = s))
+            addPatientUseCase(Patient(id = 0L, name = n, species = s))
             _state.update { it.copy(showAddDialog = false) }
         }
     }
 
     fun onDeletePatient(patientId: Long) {
-        viewModelScope.launch { deletePatient(patientId) }
+        viewModelScope.launch { deletePatientUseCase(patientId) }
     }
 }
