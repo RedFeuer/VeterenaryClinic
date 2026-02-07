@@ -9,4 +9,6 @@ interface OperationRepository {
     suspend fun addPatient(patient: Patient)
 
     suspend fun removePatient(id: Long)
+
+    suspend fun changePatient(newPatient: Patient)
 }
