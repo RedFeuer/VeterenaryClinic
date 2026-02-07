@@ -45,11 +45,8 @@ import com.example.veterinaryclinic.presentation.viewModel.AppViewModel
 
 
 @Composable
-internal fun AppRoot(
-    viewModel: AppViewModel
-    // когда сделаю DI через Hilt
-    // viewModel: AppViewModel = hiltViewModel()
-) {
+internal fun AppRoot() {
+    val viewModel = hiltViewModel<AppViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     AppScreen(

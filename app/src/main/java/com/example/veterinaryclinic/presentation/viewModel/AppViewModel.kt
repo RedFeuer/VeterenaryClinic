@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.veterinaryclinic.domain.domainModel.Patient
 import com.example.veterinaryclinic.domain.useCase.AddPatientUseCase
+import com.example.veterinaryclinic.domain.useCase.ChangePatientUseCase
 import com.example.veterinaryclinic.domain.useCase.DeletePatientUseCase
 import com.example.veterinaryclinic.domain.useCase.ObservePatientsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
 class AppViewModel(
     private val observePatientsUseCase: ObservePatientsUseCase,
     private val addPatientUseCase: AddPatientUseCase,
-    private val deletePatientUseCase: DeletePatientUseCase
+    private val deletePatientUseCase: DeletePatientUseCase,
+    private val changePatientUseCase: ChangePatientUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<AppState.Content>(AppState.Content())
