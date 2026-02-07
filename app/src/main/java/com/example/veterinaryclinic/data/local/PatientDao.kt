@@ -3,6 +3,7 @@ package com.example.veterinaryclinic.data.local
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 interface PatientDao {
@@ -15,6 +16,6 @@ interface PatientDao {
     @Query("DELETE FROM app_patients WHERE id = :id") // удаление пациента по его id
     suspend fun deletePatient(id: Long)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE) // заменяем старого пациента на нового
+    @Update // заменяем старого пациента на нового по PrimaryKey = id
     suspend fun changePatient(patient: PatientEntity)
 }
