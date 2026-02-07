@@ -1,0 +1,12 @@
+package com.example.veterinaryclinic.domain.repositoryInterface
+
+import com.example.veterinaryclinic.domain.domainModel.Patient
+import kotlinx.coroutines.flow.Flow
+
+interface OperationRepository {
+    fun observePatients() : Flow<List<Patient>>
+
+    suspend fun addPatient(patient: Patient)
+
+    suspend fun removePatient(id: Long)
+}
