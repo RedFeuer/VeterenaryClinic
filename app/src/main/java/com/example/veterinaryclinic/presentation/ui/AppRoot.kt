@@ -17,16 +17,19 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,18 +38,44 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.veterinaryclinic.domain.domainModel.Patient
+import com.example.veterinaryclinic.presentation.viewModel.AppState
+import com.example.veterinaryclinic.presentation.viewModel.AppViewModel
 
-data class PatientUi(
-    val id: Long,
-    val name: String,
-    val species: String,
-)
 
 @Composable
-internal fun AppRoot() {
-    val patients = remember { mutableStateListOf<PatientUi>() }
-    var showAddDialog by remember { mutableStateOf(false) }
-    var nextId by rememberSaveable { mutableStateOf(1L) }
+internal fun AppRoot(
+    viewModel: AppViewModel
+    // когда сделаю DI через Hilt
+    // viewModel: AppViewModel = hiltViewModel()
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    AppScreen(
+        state = state,
+        onAddClick = viewModel::onAddClick,
+        onDismissAddDialog = viewModel::onDismissAddDialog,
+        onConfirmAdd = viewModel::onConfirmAddPatient,
+        onDeletePatient = viewModel::onDeletePatient
+    )
+}
+
+@Composable
+private fun AppScreen(
+    state: AppState.Content,
+    onAddClick: () -> Unit,
+    onDismissAddDialog: () -> Unit,
+    onConfirmAdd: (name: String, species: String) -> Unit,
+    onDeletePatient: (patientId: Long) -> Unit
+) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    /* снэк с ошибкой */
+    LaunchedEffect(state.error) {
+        val msg = state.error ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message = msg)
+    }
 
     Scaffold(
         topBar = {
@@ -56,67 +85,71 @@ internal fun AppRoot() {
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Button(onClick = { showAddDialog = true }) {
+                Button(onClick = onAddClick) {
                     Text("Добавить пациента")
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        if (patients.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Пациентов пока нет")
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            /* Контент */
+            if (!state.isLoading && state.patients.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Пациентов пока нет")
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(
+                        items = state.patients,
+                        key = { it.id }
+                    ) { patient ->
+                        PatientRow(
+                            patient = patient,
+                            onDelete = { onDeletePatient(patient.id) }
+                        )
+                    }
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(
-                    items = patients,
-                    key = { it.id }
-                ) { patient ->
-                    PatientRow(
-                        patient = patient,
-                        onDelete = { patients.remove(patient) }
-                    )
+
+            /* Загрузка */
+            if (state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
         }
     }
 
-    if (showAddDialog) {
+    /* Диалог добавления */
+    if (state.showAddDialog) {
         AddPatientDialog(
-            onDismiss = { showAddDialog = false },
-            onAdd = { name, species ->
-                patients.add(
-                    PatientUi(
-                        id = nextId++,
-                        name = name.trim(),
-                        species = species.trim()
-                    )
-                )
-                showAddDialog = false
-            }
+            onDismiss = onDismissAddDialog,
+            onAdd = onConfirmAdd
         )
     }
 }
 
 @Composable
 private fun PatientRow(
-    patient: PatientUi,
+    patient: Patient,
     onDelete: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,8 +184,8 @@ private fun AddPatientDialog(
     onDismiss: () -> Unit,
     onAdd: (name: String, species: String) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
-    var species by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var species by rememberSaveable { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
