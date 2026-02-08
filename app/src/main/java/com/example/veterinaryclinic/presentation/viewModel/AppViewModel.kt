@@ -3,6 +3,8 @@ package com.example.veterinaryclinic.presentation.viewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.veterinaryclinic.domain.domainModel.Patient
+import com.example.veterinaryclinic.domain.domainModel.PatientType
+import com.example.veterinaryclinic.domain.domainModel.Sex
 import com.example.veterinaryclinic.domain.useCase.AddPatientUseCase
 import com.example.veterinaryclinic.domain.useCase.ChangePatientUseCase
 import com.example.veterinaryclinic.domain.useCase.DeletePatientUseCase
@@ -48,14 +50,37 @@ class AppViewModel @Inject constructor (
         _state.update { it.copy(showAddDialog = false) }
     }
 
-    fun onConfirmAddPatient(name: String, species: String) {
+    fun onConfirmAddPatient(
+        name: String,
+        type: PatientType,
+        customType: String,
+        sex: Sex,
+        ageYears: Int,
+        comment: String,
+    ) {
         val n = name.trim()
-        val s = species.trim()
-        if (n.isBlank() || s.isBlank()) return
+        val ct = customType.trim()
+        val cmt = comment.trim()
+
+        if (n.isBlank()) return
+        if (ageYears < 0) return
+        if (type == PatientType.OTHER && ct.isBlank()) return
+
+        val customTypeOrNull = if (type == PatientType.OTHER) ct else null
+        val commentOrNull = cmt.takeIf { it.isNotBlank() }
 
         viewModelScope.launch {
-            // id лучше генерировать в Room через autoGenerate, тогда здесь id не нужен.
-            addPatientUseCase(Patient(id = 0L, name = n, species = s))
+            addPatientUseCase(
+                Patient(
+                    id = 0L,
+                    name = n,
+                    type = type,
+                    customType = customTypeOrNull,
+                    sex = sex,
+                    ageYears = ageYears,
+                    comment = commentOrNull
+                )
+            )
             _state.update { it.copy(showAddDialog = false) }
         }
     }
@@ -69,13 +94,38 @@ class AppViewModel @Inject constructor (
         _state.update { it.copy(editingPatient = null) }
     }
 
-    fun onConfirmChangePatient(patientId: Long, name: String, species: String) {
+    fun onConfirmChangePatient(
+        patientId: Long,
+        name: String,
+        type: PatientType,
+        customType: String,
+        sex: Sex,
+        ageYears: Int,
+        comment: String,
+    ) {
         val n = name.trim()
-        val s = species.trim()
-        if (n.isBlank() || s.isBlank()) return
+        val ct = customType.trim()
+        val cmt = comment.trim()
+
+        if (n.isBlank()) return
+        if (ageYears < 0) return
+        if (type == PatientType.OTHER && ct.isBlank()) return
+
+        val customTypeOrNull = if (type == PatientType.OTHER) ct else null
+        val commentOrNull = cmt.takeIf { it.isNotBlank() }
 
         viewModelScope.launch {
-            changePatientUseCase(Patient(id = patientId, name = n, species = s))
+            changePatientUseCase(
+                Patient(
+                    id = patientId,
+                    name = n,
+                    type = type,
+                    customType = customTypeOrNull,
+                    sex = sex,
+                    ageYears = ageYears,
+                    comment = commentOrNull
+                )
+            )
             _state.update { it.copy(editingPatient = null) }
         }
     }

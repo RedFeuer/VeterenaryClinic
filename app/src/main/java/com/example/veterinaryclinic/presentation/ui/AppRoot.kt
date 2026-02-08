@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -20,7 +21,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,10 +45,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.veterinaryclinic.domain.domainModel.Patient
+import com.example.veterinaryclinic.domain.domainModel.PatientType
+import com.example.veterinaryclinic.domain.domainModel.Sex
 import com.example.veterinaryclinic.presentation.viewModel.AppState
 import com.example.veterinaryclinic.presentation.viewModel.AppViewModel
 
@@ -58,8 +65,15 @@ internal fun AppRoot() {
         state = state,
         onAddClick = { viewModel.onAddClick() },
         onDismissAddDialog = { viewModel.onDismissAddDialog() },
-        onConfirmAdd = { name, species ->
-            viewModel.onConfirmAddPatient(name, species)
+        onConfirmAdd = { name, type, customType, sex, ageYears, comment ->
+            viewModel.onConfirmAddPatient(
+                name = name,
+                type = type,
+                customType = customType,
+                sex = sex,
+                ageYears = ageYears,
+                comment = comment,
+            )
         },
         onDeletePatient = { patientId ->
             viewModel.onDeletePatient(patientId)
@@ -69,8 +83,16 @@ internal fun AppRoot() {
             viewModel.onEditClick(patient)
         },
         onDismissEditDialog = { viewModel.onDismissEditDialog() },
-        onConfirmEdit = { patientId, name, species ->
-            viewModel.onConfirmChangePatient(patientId, name, species)
+        onConfirmEdit = { patientId, name, type, customType, sex, ageYears, comment ->
+            viewModel.onConfirmChangePatient(
+                patientId = patientId,
+                name = name,
+                type = type,
+                customType = customType,
+                sex = sex,
+                ageYears = ageYears,
+                comment = comment,
+            )
         },
     )
 }
@@ -81,11 +103,26 @@ private fun AppScreen(
     state: AppState.Content,
     onAddClick: () -> Unit,
     onDismissAddDialog: () -> Unit,
-    onConfirmAdd: (name: String, species: String) -> Unit,
+    onConfirmAdd: (
+        name: String,
+        type: PatientType,
+        customType: String,
+        sex: Sex,
+        ageYears: Int,
+        comment: String
+    ) -> Unit,
     onDeletePatient: (patientId: Long) -> Unit,
     onEditClick: (patient: Patient) -> Unit,
     onDismissEditDialog: () -> Unit,
-    onConfirmEdit: (patientId: Long, name: String, species: String) -> Unit,
+    onConfirmEdit: (
+        patientId: Long,
+        name: String,
+        type: PatientType,
+        customType: String,
+        sex: Sex,
+        ageYears: Int,
+        comment: String
+    ) -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -156,7 +193,11 @@ private fun AppScreen(
         PatientDialog(
             title = "Новый пациент",
             initialName = "",
-            initialSpecies = "",
+            initialType = PatientType.CAT,
+            initialCustomType = "",
+            initialSex = Sex.UNKNOWN,
+            initialAgeYears = 0,
+            initialComment = "",
             onDismiss = onDismissAddDialog,
             onConfirm = onConfirmAdd,
             confirmText = "Сохранить"
@@ -169,9 +210,15 @@ private fun AppScreen(
         PatientDialog(
             title = "Редактирование пациента",
             initialName = editing.name,
-            initialSpecies = editing.species,
+            initialType = editing.type,
+            initialCustomType = editing.customType.orEmpty(),
+            initialSex = editing.sex,
+            initialAgeYears = editing.ageYears,
+            initialComment = editing.comment.orEmpty(),
             onDismiss = onDismissEditDialog,
-            onConfirm = { name, species -> onConfirmEdit(editing.id, name, species) },
+            onConfirm = { name, type, customType, sex, ageYears, comment ->
+                onConfirmEdit(editing.id, name, type, customType, sex, ageYears, comment)
+            },
             confirmText = "Сохранить"
         )
     }
@@ -183,6 +230,14 @@ private fun PatientRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val typeText = when (patient.type) {
+        PatientType.OTHER -> patient.customType?.takeIf { it.isNotBlank() } ?: "Другое"
+        else -> patient.type.uiText()
+    }
+
+    val genderText = patient.sex.uiText()
+    val ageText = "${patient.ageYears} лет"
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -191,65 +246,216 @@ private fun PatientRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+
+                // Имя
                 Text(
                     text = patient.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(text = patient.species, style = MaterialTheme.typography.bodyMedium)
+
+                Spacer(Modifier.height(4.dp))
+
+                // Тип • Пол • Возраст
+                Text(
+                    text = "$typeText • $genderText • $ageText",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                // Комментарий (если есть)
+                patient.comment
+                    ?.trim()
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { comment ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = comment,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
             }
 
-            TextButton(onClick = onEdit) { Text("Изменить") }
+            // Действия
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onEdit) {
+                    Text("Изменить")
+                }
 
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Удалить пациента")
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Удалить пациента"
+                    )
+                }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PatientDialog(
     title: String,
     initialName: String,
-    initialSpecies: String,
+    initialType: PatientType,
+    initialCustomType: String,
+    initialSex: Sex,
+    initialAgeYears: Int,
+    initialComment: String,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, species: String) -> Unit,
+    onConfirm: (
+        name: String,
+        type: PatientType,
+        customType: String,
+        gender: Sex,
+        ageYears: Int,
+        comment: String
+    ) -> Unit,
     confirmText: String,
 ) {
     var name by rememberSaveable(initialName) { mutableStateOf(initialName) }
-    var species by rememberSaveable(initialSpecies) { mutableStateOf(initialSpecies) }
+
+    var type by rememberSaveable(initialType.name) { mutableStateOf(initialType) }
+    var customType by rememberSaveable(initialCustomType) { mutableStateOf(initialCustomType) }
+
+    var gender by rememberSaveable(initialSex.name) { mutableStateOf(initialSex) }
+
+    var ageText by rememberSaveable(initialAgeYears) { mutableStateOf(initialAgeYears.toString()) }
+    var comment by rememberSaveable(initialComment) { mutableStateOf(initialComment) }
+
+    var typeExpanded by remember { mutableStateOf(false) }
+    var genderExpanded by remember { mutableStateOf(false) }
+
+    val ageInt = ageText.toIntOrNull()
+    val isValid =
+        name.isNotBlank() &&
+                (ageInt != null && ageInt >= 0) &&
+                (type != PatientType.OTHER || customType.isNotBlank())
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     singleLine = true,
-                    label = { Text("Кличка") },
+                    label = { Text("Имя") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                ExposedDropdownMenuBox(
+                    expanded = typeExpanded,
+                    onExpandedChange = { typeExpanded = !typeExpanded }
+                ) {
+                    OutlinedTextField(
+                        readOnly = true,
+                        value = if (type == PatientType.OTHER) "Другое" else type.uiText(),
+                        onValueChange = {},
+                        label = { Text("Тип") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = typeExpanded,
+                        onDismissRequest = { typeExpanded = false }
+                    ) {
+                        PatientType.entries.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(if (option == PatientType.OTHER) "Другое" else option.uiText()) },
+                                onClick = {
+                                    type = option
+                                    typeExpanded = false
+                                    if (option != PatientType.OTHER) customType = ""
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (type == PatientType.OTHER) {
+                    OutlinedTextField(
+                        value = customType,
+                        onValueChange = { customType = it },
+                        singleLine = true,
+                        label = { Text("Тип (другое)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                ExposedDropdownMenuBox(
+                    expanded = genderExpanded,
+                    onExpandedChange = { genderExpanded = !genderExpanded }
+                ) {
+                    OutlinedTextField(
+                        readOnly = true,
+                        value = gender.uiText(),
+                        onValueChange = {},
+                        label = { Text("Пол") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = genderExpanded,
+                        onDismissRequest = { genderExpanded = false }
+                    ) {
+                        Sex.entries.forEach { g ->
+                            DropdownMenuItem(
+                                text = { Text(g.uiText()) },
+                                onClick = {
+                                    gender = g
+                                    genderExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 OutlinedTextField(
-                    value = species,
-                    onValueChange = { species = it },
+                    value = ageText,
+                    onValueChange = { ageText = it.filter(Char::isDigit).take(3) },
                     singleLine = true,
-                    label = { Text("Вид (кот/собака)") },
+                    label = { Text("Возраст (лет)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it },
+                    label = { Text("Комментарий") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
                 )
             }
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(name, species) },
-                enabled = name.isNotBlank() && species.isNotBlank()
+                onClick = {
+                    val age = ageText.toIntOrNull() ?: 0
+                    onConfirm(name, type, customType, gender, age, comment)
+                },
+                enabled = isValid
             ) { Text(confirmText) }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } }
     )
+}
+
+private fun PatientType.uiText(): String = when (this) {
+    PatientType.CAT -> "Кот"
+    PatientType.DOG -> "Собака"
+    PatientType.BIRD -> "Птица"
+    PatientType.RABBIT -> "Кролик"
+    PatientType.OTHER -> "Другое"
+}
+
+private fun Sex.uiText(): String = when (this) {
+    Sex.MALE -> "Самец"
+    Sex.FEMALE -> "Самка"
+    Sex.UNKNOWN -> "Не указан"
 }
