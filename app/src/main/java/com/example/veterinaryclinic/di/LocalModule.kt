@@ -11,9 +11,23 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
+/**
+ * Hilt-модуль локального слоя (Room).
+ *
+ * Отвечает за создание и предоставление singleton-зависимостей:
+ * - базы данных [AppDatabase]
+ * - DAO [PatientDao]
+ * - маппера [PatientEntityMapper]
+ *
+ * Все зависимости живут в [SingletonComponent], т.е. один экземпляр на всё приложение.
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 class LocalModule {
+    /**
+     * Создаёт singleton Room-базу приложения.
+     * Здесь подключаются миграции при изменении схемы БД.
+     */
     @Provides
     @Singleton
     fun provideDatabase(app: Application): AppDatabase {
@@ -23,17 +37,19 @@ class LocalModule {
             name = AppDatabase.DATABASE_NAME
         )
             .addMigrations(
-//                MIGRATION_1_2, // добавил колонки type, customType, sex, ageYears, comment
+                /* сюда добавлять миграции из Migrations.kt */
             )
             .build()
     }
 
+    /** Предоставляет [PatientDao] для доступа к таблице пациентов. */
     @Provides
     @Singleton
     fun providePatientDao(database: AppDatabase): PatientDao {
         return database.patientDao()
     }
 
+    /** Предоставляет маппер моделей Room <-> Domain. */
     @Provides
     @Singleton
     fun providePatientEntityMapper(): PatientEntityMapper {
