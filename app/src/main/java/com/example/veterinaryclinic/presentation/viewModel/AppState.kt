@@ -12,6 +12,7 @@ sealed interface AppState {
         val patients: List<Patient> = emptyList(),
         val showAddDialog: Boolean = false,
         val editingPatient: Patient? = null,
+        val deletingPatient: Patient? = null,
         val isLoading: Boolean = true,
         val error: String? = null
     )

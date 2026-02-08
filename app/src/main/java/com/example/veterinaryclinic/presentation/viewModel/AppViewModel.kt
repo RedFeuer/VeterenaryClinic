@@ -131,7 +131,20 @@ class AppViewModel @Inject constructor (
     }
 
     /* УДАЛЕНИЕ ПАЦИЕНТА */
-    fun onDeletePatient(patientId: Long) {
-        viewModelScope.launch { deletePatientUseCase(patientId) }
+    fun onDeleteClick(patient: Patient) {
+        _state.update { it.copy(deletingPatient = patient) }
+    }
+
+    fun onDismissDeleteDialog() {
+        _state.update { it.copy(deletingPatient = null) }
+    }
+
+    fun onConfirmDeletePatient() {
+        val patientId = _state.value.deletingPatient?.id ?: return
+
+        viewModelScope.launch {
+            deletePatientUseCase(patientId)
+            _state.update { it.copy(deletingPatient = null) }
+        }
     }
 }

@@ -75,12 +75,14 @@ internal fun AppRoot() {
                 comment = comment,
             )
         },
-        onDeletePatient = { patientId ->
-            viewModel.onDeletePatient(patientId)
+        onDeletePatient = { patient ->
+            viewModel.onDeleteClick(patient)
         },
+        onDismissDeleteDialog = { viewModel.onDismissDeleteDialog() },
+        onConfirmDelete = { viewModel.onConfirmDeletePatient() },
 
         onEditClick = {patient ->
-            viewModel.onEditClick(patient)
+            viewModel.onDeleteClick(patient)
         },
         onDismissEditDialog = { viewModel.onDismissEditDialog() },
         onConfirmEdit = { patientId, name, type, customType, sex, ageYears, comment ->
@@ -111,7 +113,9 @@ private fun AppScreen(
         ageYears: Int,
         comment: String
     ) -> Unit,
-    onDeletePatient: (patientId: Long) -> Unit,
+    onDismissDeleteDialog: () -> Unit,
+    onConfirmDelete: () -> Unit,
+    onDeletePatient: (patient: Patient) -> Unit,
     onEditClick: (patient: Patient) -> Unit,
     onDismissEditDialog: () -> Unit,
     onConfirmEdit: (
@@ -126,6 +130,7 @@ private fun AppScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
+    /* вывод ошибок в снеках */
     LaunchedEffect(state.error) {
         val msg = state.error ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message = msg)
@@ -172,7 +177,7 @@ private fun AppScreen(
                             PatientRow(
                                 patient = patient,
                                 onEdit = { onEditClick(patient) },
-                                onDelete = { onDeletePatient(patient.id) }
+                                onDelete = { onDeletePatient(patient) }
                             )
                         }
                     }
@@ -222,6 +227,22 @@ private fun AppScreen(
             confirmText = "Сохранить"
         )
     }
+
+    /* Диалог удаления пациента */
+    val deleting = state.deletingPatient
+    if (deleting != null) {
+        AlertDialog(
+            onDismissRequest = onDismissDeleteDialog,
+            title = { Text("Удалить пациента?") },
+            text = { Text("Вы уверены, что хотите удалить пациента «${deleting.name}»?") },
+            confirmButton = {
+                TextButton(onClick = onConfirmDelete) { Text("Да") }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissDeleteDialog) { Text("Нет") }
+            }
+        )
+    }
 }
 
 @Composable
@@ -247,7 +268,7 @@ private fun PatientRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
 
-                // Имя
+                /* Имя */
                 Text(
                     text = patient.name,
                     style = MaterialTheme.typography.titleMedium,
@@ -256,13 +277,13 @@ private fun PatientRow(
 
                 Spacer(Modifier.height(4.dp))
 
-                // Тип • Пол • Возраст
+                /* Тип • Пол • Возраст */
                 Text(
                     text = "$typeText • $genderText • $ageText",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                // Комментарий (если есть)
+                /* Комментарий (если есть) */
                 patient.comment
                     ?.trim()
                     ?.takeIf { it.isNotBlank() }
@@ -275,7 +296,7 @@ private fun PatientRow(
                     }
             }
 
-            // Действия
+            /* Действия */
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
