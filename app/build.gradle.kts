@@ -1,10 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-
-    // Hilt runtime + compiler for KSP
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -53,21 +49,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-
-    /* Hilt */
-    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
-
-    /* Room */
     implementation(libs.androidx.room.ktx)
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
-
-    // Hilt runtime + compiler for KSP
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
