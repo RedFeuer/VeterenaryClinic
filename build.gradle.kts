@@ -2,4 +2,8 @@
 plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.kotlin.compose) apply false
+
+    // Hilt runtime + compiler for KSP
+    alias(libs.plugins.hilt.android) apply false
+    alias(libs.plugins.ksp) apply false
 }
