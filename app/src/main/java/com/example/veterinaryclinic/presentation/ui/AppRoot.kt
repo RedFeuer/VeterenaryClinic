@@ -82,7 +82,7 @@ internal fun AppRoot() {
         onConfirmDelete = { viewModel.onConfirmDeletePatient() },
 
         onEditClick = {patient ->
-            viewModel.onDeleteClick(patient)
+            viewModel.onEditClick(patient)
         },
         onDismissEditDialog = { viewModel.onDismissEditDialog() },
         onConfirmEdit = { patientId, name, type, customType, sex, ageYears, comment ->
@@ -176,8 +176,8 @@ private fun AppScreen(
                         items(items = state.patients, key = { it.id }) { patient ->
                             PatientRow(
                                 patient = patient,
-                                onEdit = { onEditClick(patient) },
-                                onDelete = { onDeletePatient(patient) }
+                                onEdit = { onEditClick(patient) }, // кнопка редактирования
+                                onDelete = { onDeletePatient(patient) } // кнопка удаления
                             )
                         }
                     }
