@@ -23,9 +23,9 @@ class OperationRepositoryImpl @Inject constructor(
     }
 
     /* добавление нового пациента в список */
-    override suspend fun addPatient(patient: Patient) {
+    override suspend fun addPatient(patient: Patient): Long {
         val patientEntity = patientEntityMapper.toEntity(patient)
-        dao.addPatient(patientEntity)
+        return dao.addPatient(patientEntity)
     }
 
     override suspend fun removePatient(id: Long) {

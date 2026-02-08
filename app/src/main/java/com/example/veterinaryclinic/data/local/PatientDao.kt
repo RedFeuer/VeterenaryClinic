@@ -12,8 +12,8 @@ interface PatientDao {
     @Query("SELECT * FROM app_patients") // получить все(*) из таблицы в List
     fun getPatients(): Flow<List<PatientEntity>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE) // не меняем, для этого будет специальая функция замены
-    suspend fun addPatient(patient: PatientEntity)
+    @Insert(onConflict = OnConflictStrategy.ABORT) // не меняем, для этого будет специальая функция замены
+    suspend fun addPatient(patient: PatientEntity) : Long // возвращаем ключ, автосгенеренный Room
 
     @Query("DELETE FROM app_patients WHERE id = :id") // удаление пациента по его id
     suspend fun deletePatient(id: Long)

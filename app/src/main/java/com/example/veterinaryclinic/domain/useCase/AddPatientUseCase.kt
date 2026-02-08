@@ -6,7 +6,7 @@ import com.example.veterinaryclinic.domain.repositoryInterface.OperationReposito
 class AddPatientUseCase(
     private val repository: OperationRepository
 ) {
-    suspend operator fun invoke(patient: Patient) {
-        repository.addPatient(patient)
+    suspend operator fun invoke(patient: Patient) : Long {
+        return repository.addPatient(patient)
     }
 }
