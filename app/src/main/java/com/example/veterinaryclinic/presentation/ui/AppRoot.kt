@@ -60,6 +60,14 @@ internal fun AppRoot() {
         onDeletePatient = { patientId ->
             viewModel.onDeletePatient(patientId)
         },
+
+        onEditClick = {patient ->
+            viewModel.onEditClick(patient)
+        },
+        onDismissEditDialog = { viewModel.onDismissEditDialog() },
+        onConfirmEdit = { patientId, name, species ->
+            viewModel.onConfirmChangePatient(patientId, name, species)
+        },
     )
 }
 
@@ -69,11 +77,13 @@ private fun AppScreen(
     onAddClick: () -> Unit,
     onDismissAddDialog: () -> Unit,
     onConfirmAdd: (name: String, species: String) -> Unit,
-    onDeletePatient: (patientId: Long) -> Unit
+    onDeletePatient: (patientId: Long) -> Unit,
+    onEditClick: (patient: Patient) -> Unit,
+    onDismissEditDialog: () -> Unit,
+    onConfirmEdit: (patientId: Long, name: String, species: String) -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    /* снэк с ошибкой */
     LaunchedEffect(state.error) {
         val msg = state.error ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(message = msg)
@@ -87,9 +97,7 @@ private fun AppScreen(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Button(onClick = onAddClick) {
-                    Text("Добавить пациента")
-                }
+                Button(onClick = onAddClick) { Text("Добавить пациента") }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -99,12 +107,8 @@ private fun AppScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            /* Контент */
             if (!state.isLoading && state.patients.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Пациентов пока нет")
                 }
             } else {
@@ -113,35 +117,46 @@ private fun AppScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(
-                        items = state.patients,
-                        key = { it.id }
-                    ) { patient ->
+                    items(items = state.patients, key = { it.id }) { patient ->
                         PatientRow(
                             patient = patient,
+                            onEdit = { onEditClick(patient) },
                             onDelete = { onDeletePatient(patient.id) }
                         )
                     }
                 }
             }
 
-            /* Загрузка */
             if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
         }
     }
 
-    /* Диалог добавления */
+    /* Диалог добавления нового пациента */
     if (state.showAddDialog) {
-        AddPatientDialog(
+        PatientDialog(
+            title = "Новый пациент",
+            initialName = "",
+            initialSpecies = "",
             onDismiss = onDismissAddDialog,
-            onAdd = onConfirmAdd
+            onConfirm = onConfirmAdd,
+            confirmText = "Сохранить"
+        )
+    }
+
+    /* Диалог обновления пациента */
+    val editing = state.editingPatient
+    if (editing != null) {
+        PatientDialog(
+            title = "Редактирование пациента",
+            initialName = editing.name,
+            initialSpecies = editing.species,
+            onDismiss = onDismissEditDialog,
+            onConfirm = { name, species -> onConfirmEdit(editing.id, name, species) },
+            confirmText = "Сохранить"
         )
     }
 }
@@ -149,6 +164,7 @@ private fun AppScreen(
 @Composable
 private fun PatientRow(
     patient: Patient,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -165,33 +181,33 @@ private fun PatientRow(
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(Modifier.height(2.dp))
-                Text(
-                    text = patient.species,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = patient.species, style = MaterialTheme.typography.bodyMedium)
             }
 
+            TextButton(onClick = onEdit) { Text("Изменить") }
+
             IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Удалить пациента"
-                )
+                Icon(Icons.Default.Delete, contentDescription = "Удалить пациента")
             }
         }
     }
 }
 
 @Composable
-private fun AddPatientDialog(
+private fun PatientDialog(
+    title: String,
+    initialName: String,
+    initialSpecies: String,
     onDismiss: () -> Unit,
-    onAdd: (name: String, species: String) -> Unit,
+    onConfirm: (name: String, species: String) -> Unit,
+    confirmText: String,
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
-    var species by rememberSaveable { mutableStateOf("") }
+    var name by rememberSaveable(initialName) { mutableStateOf(initialName) }
+    var species by rememberSaveable(initialSpecies) { mutableStateOf(initialSpecies) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Новый пациент") },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
@@ -212,11 +228,9 @@ private fun AddPatientDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onAdd(name, species) },
+                onClick = { onConfirm(name, species) },
                 enabled = name.isNotBlank() && species.isNotBlank()
-            ) {
-                Text("Сохранить")
-            }
+            ) { Text(confirmText) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Отмена") }
