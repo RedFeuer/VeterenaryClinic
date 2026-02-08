@@ -57,6 +57,7 @@ dependencies {
     /* Hilt runtime + compiler for KSP */
     implementation(libs.hilt.android)
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    implementation(libs.androidx.compose.foundation.layout)
     ksp(libs.hilt.compiler)
 
     /* Room + KTX + Compiler */
