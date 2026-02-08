@@ -55,7 +55,15 @@ import com.example.veterinaryclinic.domain.domainModel.Sex
 import com.example.veterinaryclinic.presentation.viewModel.AppState
 import com.example.veterinaryclinic.presentation.viewModel.AppViewModel
 
-
+/**
+ * Основная composable функция приложения.
+ *
+ * Отвечает за:
+ * - получение [AppViewModel] через Hilt;
+ * - подписку на состояние экрана с учетом ЖЦ;
+ * - прокидывание состояния и пользовательских событий в [AppScreen].
+ *
+ */
 @Composable
 internal fun AppRoot() {
     val viewModel = hiltViewModel<AppViewModel>()
@@ -99,6 +107,17 @@ internal fun AppRoot() {
     )
 }
 
+/**
+ * Главный экран приложения.
+ *
+ * Отвечает за:
+ * - отображение списка пациентов и состояний (пусто, загрузка, ошибка);
+ * - показ диалогов добавления, редактирования, подтверждения удаления;
+ * - эмит пользовательских событий наружу через коллбеки (без доступа к ViewModel).
+ *
+ * Важно:
+ * - Ошибки выводятся через Snackbar при изменении [state.error].
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppScreen(
@@ -245,6 +264,19 @@ private fun AppScreen(
     }
 }
 
+/**
+ * Строка пациента в списке.
+ *
+ * Показывает краткую карточку:
+ * - имя;
+ * - сводку: тип (или customType для OTHER), пол, возраст;
+ * - комментарий (если задан).
+ *
+ * Действия:
+ * - [onEdit] — запрос на редактирование пациента (UI сигнал наружу).
+ * - [onDelete] — запрос на удаление пациента (обычно открывает диалог подтверждения).
+ *
+ */
 @Composable
 private fun PatientRow(
     patient: Patient,
@@ -315,6 +347,29 @@ private fun PatientRow(
     }
 }
 
+/**
+ * Диалог добавления/редактирования пациента.
+ *
+ * Универсальный компонент: используется и для "Новый пациент", и для "Редактирование пациента"
+ * за счет параметров initial* и заголовка.
+ *
+ * Внутри хранит черновик полей (state формы) через rememberSaveable:
+ * - имя;
+ * - тип животного (из фиксированного списка);
+ * - customType (используется только если тип = OTHER);
+ * - пол;
+ * - возраст (с удобным вводом через клавиатуру цифр);
+ * - комментарий.
+ *
+ * Валидация перед подтверждением:
+ * - имя не пустое;
+ * - возраст — число >= 0;
+ * - если выбран OTHER, то customType не пустой.
+ *
+ * События:
+ * - [onDismiss] — закрыть диалог без сохранения;
+ * - [onConfirm] — подтвердить, передав значения наружу (без обращения к данным/БД).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PatientDialog(
@@ -467,6 +522,10 @@ private fun PatientDialog(
     )
 }
 
+/**
+ * Отображаемое (UI) название типа животного.
+ * Используется для вывода в списке и в выборе типа.
+ */
 private fun PatientType.uiText(): String = when (this) {
     PatientType.CAT -> "Кот"
     PatientType.DOG -> "Собака"
@@ -475,6 +534,10 @@ private fun PatientType.uiText(): String = when (this) {
     PatientType.OTHER -> "Другое"
 }
 
+/**
+ * Отображаемое (UI) название пола.
+ * UNKNOWN используется как значение по умолчанию/если пользователь не указал.
+ */
 private fun Sex.uiText(): String = when (this) {
     Sex.MALE -> "Самец"
     Sex.FEMALE -> "Самка"

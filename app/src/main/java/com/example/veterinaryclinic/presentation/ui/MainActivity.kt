@@ -7,6 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import com.example.veterinaryclinic.ui.theme.VeterinaryClinicTheme
 import dagger.hilt.android.AndroidEntryPoint
 
+/**
+ * Подключает Hilt через @AndroidEntryPoint:
+ *    - необходимо, если внутри Compose используется hiltViewModel()
+ *      или если Activity/Composable-дерево завязано на DI через Hilt.
+ */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
