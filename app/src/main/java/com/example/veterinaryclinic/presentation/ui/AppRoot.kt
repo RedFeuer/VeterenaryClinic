@@ -52,10 +52,14 @@ internal fun AppRoot() {
 
     AppScreen(
         state = state,
-        onAddClick = viewModel::onAddClick,
-        onDismissAddDialog = viewModel::onDismissAddDialog,
-        onConfirmAdd = viewModel::onConfirmAddPatient,
-        onDeletePatient = viewModel::onDeletePatient
+        onAddClick = { viewModel.onAddClick() },
+        onDismissAddDialog = { viewModel.onDismissAddDialog() },
+        onConfirmAdd = { name, species ->
+            viewModel.onConfirmAddPatient(name, species)
+        },
+        onDeletePatient = { patientId ->
+            viewModel.onDeletePatient(patientId)
+        },
     )
 }
 
