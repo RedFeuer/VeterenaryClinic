@@ -22,9 +22,9 @@ class LocalModule {
             klass = AppDatabase::class.java,
             name = AppDatabase.DATABASE_NAME
         )
-//            .addMigrations(
-//                сюда добавлять миграции
-//            )
+            .addMigrations(
+//                MIGRATION_1_2, // добавил колонки type, customType, sex, ageYears, comment
+            )
             .build()
     }
 
