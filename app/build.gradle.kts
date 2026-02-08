@@ -53,8 +53,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.room.ktx)
+
+    /* Hilt */
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+
+    /* Room */
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
 
     // Hilt runtime + compiler for KSP
