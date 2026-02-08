@@ -11,6 +11,7 @@ sealed interface AppState {
     data class Content (
         val patients: List<Patient> = emptyList(),
         val showAddDialog: Boolean = false,
+        val editingPatient: Patient? = null,
         val isLoading: Boolean = true,
         val error: String? = null
     )

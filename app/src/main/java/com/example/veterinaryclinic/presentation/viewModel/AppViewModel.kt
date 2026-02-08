@@ -39,6 +39,7 @@ class AppViewModel @Inject constructor (
         }
     }
 
+    /* ДОБАВЛЕНИЕ ПАЦИЕНТА */
     fun onAddClick() {
         _state.update { it.copy(showAddDialog = true) }
     }
@@ -59,6 +60,27 @@ class AppViewModel @Inject constructor (
         }
     }
 
+    /* РЕДАКТИРОВАНИЕ ПАЦИЕНТА */
+    fun onEditClick(patient: Patient) {
+        _state.update { it.copy(editingPatient = patient) }
+    }
+
+    fun onDismissEditDialog() {
+        _state.update { it.copy(editingPatient = null) }
+    }
+
+    fun onConfirmChangePatient(patientId: Long, name: String, species: String) {
+        val n = name.trim()
+        val s = species.trim()
+        if (n.isBlank() || s.isBlank()) return
+
+        viewModelScope.launch {
+            changePatientUseCase(Patient(id = patientId, name = n, species = s))
+            _state.update { it.copy(editingPatient = null) }
+        }
+    }
+
+    /* УДАЛЕНИЕ ПАЦИЕНТА */
     fun onDeletePatient(patientId: Long) {
         viewModelScope.launch { deletePatientUseCase(patientId) }
     }
