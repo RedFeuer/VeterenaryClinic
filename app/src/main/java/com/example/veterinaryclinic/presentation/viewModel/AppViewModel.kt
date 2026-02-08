@@ -7,6 +7,8 @@ import com.example.veterinaryclinic.domain.useCase.AddPatientUseCase
 import com.example.veterinaryclinic.domain.useCase.ChangePatientUseCase
 import com.example.veterinaryclinic.domain.useCase.DeletePatientUseCase
 import com.example.veterinaryclinic.domain.useCase.ObservePatientsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,7 +17,8 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class AppViewModel(
+@HiltViewModel
+class AppViewModel @Inject constructor (
     private val observePatientsUseCase: ObservePatientsUseCase,
     private val addPatientUseCase: AddPatientUseCase,
     private val deletePatientUseCase: DeletePatientUseCase,

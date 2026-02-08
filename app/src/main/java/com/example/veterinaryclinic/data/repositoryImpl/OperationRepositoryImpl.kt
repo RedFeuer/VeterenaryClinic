@@ -4,10 +4,11 @@ import com.example.veterinaryclinic.data.local.PatientDao
 import com.example.veterinaryclinic.data.local.PatientEntityMapper
 import com.example.veterinaryclinic.domain.domainModel.Patient
 import com.example.veterinaryclinic.domain.repositoryInterface.OperationRepository
+import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class OperationRepositoryImpl(
+class OperationRepositoryImpl @Inject constructor(
     private val dao: PatientDao, // DI для работы с БД Room
     private val patientEntityMapper: PatientEntityMapper, // маппер entity <-> domainModel
 ): OperationRepository {
